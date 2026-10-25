@@ -1,4 +1,4 @@
-/* EXE ICE FISHING · engine v1.0.0 · form&soul.exe */
+/* EXE ICE FISHING · engine v1.0.1 · form&soul.exe */
 (function(){
 'use strict';
 const W = 1024, H = 1024, PX = 4, LOOP = 12;
@@ -220,9 +220,14 @@ function allowed(meta){
   if (CFG.who === 'mods') return false; if (CFG.who === 'vips') return !!r.vip;
   if (CFG.who === 'subs') return !!(r.sub || r.vip); return true; }
 let learnReward = false;
+const shopOpenFor = {};
 function onChat(name, msg, meta){
   if (!msg && !(meta && meta.rewardId)) return; meta = meta || {};
-  const m = (msg || '').trim().toLowerCase(), C = CMD(), parts = m.split(/\s+/), cmd = parts[0], r = meta.roles || {};
+  let m = (msg || '').trim().toLowerCase().replace(/\s+/g, ' '); const C = CMD(), r = meta.roles || {};
+  // forgiving syntax: "!buy1" = "!buy 1", "!icefishstorm" / "!icefish-storm" = "!icefish storm"
+  { const bm = m.match(new RegExp('^' + C.buy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s#-]*(\\d{1,2})$')); if (bm) m = C.buy + ' ' + bm[1]; }
+  { const im = m.match(/^!icefish[\s_-]*(storm|raid|give|setreward|reset)(.*)$/); if (im) m = '!icefish ' + im[1] + (im[2] ? ' ' + im[2].trim() : ''); }
+  const parts = m.split(' '), cmd = parts[0];
   // streamer / mod tools
   if (cmd === '!icefish' && (r.broadcaster || r.mod)) return modCmd(name, parts.slice(1));
   // channel points: reward redemption (needs "Require viewer to enter text" on the reward)
@@ -232,11 +237,13 @@ function onChat(name, msg, meta){
     if (rid && meta.rewardId === rid && CFG.fishMode !== 'command') { lastAct = T; return cast(name, true); }
     return;
   }
+  // shortcut: right after opening the shop, a viewer can just type the number
+  if (/^\d{1,2}$/.test(m) && CFG.menus.buy && shopOpenFor[name] !== undefined && T - shopOpenFor[name] < 30 && allowed(meta)) { lastAct = T; return buy(name, m); }
   if (!m.startsWith('!')) return;
   if (!allowed(meta)) return;
   lastAct = T;
   if (cmd === C.fish) { if (CFG.fishMode === 'points') return; return cast(name); }
-  if (cmd === C.shop && CFG.menus.shop) return openPanel('shop', name);
+  if (cmd === C.shop && CFG.menus.shop) { shopOpenFor[name] = T; return openPanel('shop', name); }
   if (cmd === C.dex && CFG.menus.dex) return openPanel('dex', name);
   if (cmd === C.quests && CFG.menus.quests) return openPanel('quests', name);
   if (cmd === C.bag && CFG.menus.bag) return openPanel('bag', name);
@@ -256,7 +263,7 @@ function buy(name, what){
   const v = viewer(name); if (!what) return openPanel('shop', name);
   let it = ITEMS[parseInt(what,10)-1] || ITEMS.find(i => i.id === what.replace(/\s+/g,'_') || i.name.toLowerCase() === what);
   if (!it) return;
-  if (v.coins < it.price) { toasts.push({ t:'nope', name, text: 'needs ' + it.price + ' coins' }); sfx('nope'); return; }
+  if (v.coins < it.price) { toasts.push({ t:'nope', name, text: 'not enough coins (' + v.coins + '/' + it.price + ')' }); sfx('nope'); return; }
   v.coins -= it.price; bump(v,'spent',it.price); bump(v,'bought');
   if (it.id === 'mystery_gift') { const pool = ITEMS.filter(i => i.id !== 'mystery_gift' && i.id !== 'golden_ticket' && i.id !== 'golden_rod'); it = pick(pool); toasts.push({ t:'gift', name, text: 'got ' + it.name + '!', item: it.id }); }
   else toasts.push({ t:'buy', name, text: it.name, item: it.id });
@@ -541,7 +548,8 @@ function drawColumn(){
   const x = PCX, w = PCW; let y = 26; const vis = panel ? clamp(1 - (T - panel.t0)/0.25, 0, 1) * 0 + (panel ? 0 : 1) : 1;
   if (!vis) return;
   o.save(); o.textBaseline = 'middle';
-  o.fillStyle = '#f3e2c2'; o.font = '700 26px Fredoka'; o.textAlign = 'left'; o.fillText('PLAY IN CHAT', x + 6, y + 14); y += 40;
+  const head = (t, yy) => { o.font = '700 26px Fredoka'; o.textAlign = 'left'; o.lineJoin = 'round'; o.lineWidth = 6; o.strokeStyle = 'rgba(14,18,36,0.9)'; o.strokeText(t, x + 6, yy); o.fillStyle = '#f3e2c2'; o.fillText(t, x + 6, yy); };
+  head('PLAY IN CHAT', y + 14); y += 40;
   const tabs = [['fish', CFG.command]]; ['dex','shop','bag','quests','coins'].forEach(k => { if (CFG.menus[k]) tabs.push([k, CFG.cmds[k]]); });
   tabs.forEach((t, i) => { const tx = x + (i%2)*(w/2), ty = y + Math.floor(i/2)*58; o.font = '700 28px Fredoka'; const tw = Math.min(w/2 - 14, o.measureText(t[1]).width + 44);
     o.fillStyle = TABCOL[t[0]]; o.beginPath(); o.roundRect(tx, ty, tw, 48, 16); o.fill(); o.fillStyle = 'rgba(0,0,0,0.22)'; o.beginPath(); o.roundRect(tx, ty + 40, tw, 8, [0,0,16,16]); o.fill();
@@ -555,7 +563,7 @@ function drawColumn(){
         o.fillStyle = CFG.cardText; o.textAlign = 'left'; o.font = '600 22px Fredoka'; o.fillText(n.length > 16 ? n.slice(0,15) + '…' : n, x + 62, yy + 1);
         o.textAlign = 'right'; o.font = '700 22px Fredoka'; o.fillStyle = '#b07a10'; o.fillText(CFG.board === 'coins' ? v.coins : v.catches, x + w - 24, yy + 1); o.textAlign = 'left'; });
       y += h + 22; } }
-  if (feed.length) { o.fillStyle = '#f3e2c2'; o.font = '700 26px Fredoka'; o.fillText('LATEST', x + 6, y + 14); y += 40;
+  if (feed.length) { head('LATEST', y + 14); y += 40;
     const room = Math.max(0, Math.floor((1010 - y)/80));
     feed.slice(0, room).forEach((e, i) => { const yy = y + i*80, al = clamp((T - e.t0)/0.3, 0, 1); o.globalAlpha = al;
       const bc = e.kind === 'event' ? '#b07dff' : e.kind === 'quest' ? '#3fb8a8' : (e.res ? (e.res.variant === 'golden' ? '#e0a92a' : RARITY[e.res.cr.rarity].col) : '#6f86a8');
@@ -624,7 +632,7 @@ function drawPanel(){
   o.textBaseline = 'middle';
   if (panel.kind === 'shop') {
     const rh = SIDE ? 70 : 74, h = 116 + ITEMS.length*rh, y = place(h), big = !SIDE;
-    card(x, y, w, h, 'ICE SHOP', panel.name + ' · ' + v.coins + ' coins · type !buy + number');
+    card(x, y, w, h, 'ICE SHOP', panel.name + ' · ' + v.coins + ' coins · type the number to buy');
     ITEMS.forEach((it, i) => { const yy = y + 82 + i*rh + rh/2, ok = v.coins >= it.price;
       o.globalAlpha = out * (ok ? 1 : 0.55);
       o.fillStyle = ok ? '#fde9c4' : '#efe4d4'; o.beginPath(); o.roundRect(x + 22, yy - rh/2 + 4, w - 44, rh - 8, 16); o.fill();
@@ -689,7 +697,7 @@ function drawHints(){
 function toastLabel(t){ return t.t === 'catch' ? 'caught ' + t.text : t.t === 'quest' ? '★ ' + t.text + '  +' + t.reward : t.t === 'coins' ? t.text : t.t === 'nope' ? t.text : t.t === 'event' ? t.text + '  thanks ' + t.name + '!' : (t.t === 'gift' ? 'gift: ' : 'bought ') + t.text; }
 function drawToasts(){
   const loose = [];
-  if (SIDE) toasts.forEach(t => { if (!t.fed && t.t !== 'nope' && t.t !== 'catch') { t.fed = true; feedAdd({ kind: t.t === 'quest' ? 'quest' : t.t === 'event' ? 'event' : 'note', name: t.name, item: t.item, text: t.t === 'quest' ? (t.group ? 'completed ' + t.text + '!  +' + t.reward : 'quest done: ' + t.text + '  +' + t.reward) : toastLabel(t) }); } });
+  if (SIDE) toasts.forEach(t => { if (!t.fed && t.t !== 'catch' && (t.t !== 'nope' || spotOf(t.name) < 0)) { t.fed = true; feedAdd({ kind: t.t === 'quest' ? 'quest' : t.t === 'event' ? 'event' : 'note', name: t.name, item: t.item, text: t.t === 'nope' ? t.text : t.t === 'quest' ? (t.group ? 'completed ' + t.text + '!  +' + t.reward : 'quest done: ' + t.text + '  +' + t.reward) : toastLabel(t) }); } });
   toasts.forEach(t => { if (SIDE && t.fed) return; const a = T - t.t0, al = clamp(a/0.2,0,1) * clamp((3.2-a)/0.3,0,1); const i = t.t === 'event' ? -1 : spotOf(t.name);
     if (i < 0) { loose.push(t); return; }
     const sp = SPOTS[i], hx = sp.st[0] + (sp.flip ? -12 : 12), stack = toasts.filter(u => u !== t && spotOf(u.name) === i && u.t0 > t.t0).length;
