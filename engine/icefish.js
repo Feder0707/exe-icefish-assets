@@ -1,4 +1,4 @@
-/* EXE ICE FISHING · engine v1.0.4 · form&soul.exe */
+/* EXE FISH ISLAND · engine v1.0.5 · form&soul.exe */
 (function(){
 'use strict';
 const W = 1024, H = 1024, PX = 4, LOOP = 12;
@@ -647,7 +647,7 @@ function drawPanel(){
   if (panel.kind === 'shop') {
     const rh = SIDE ? 70 : 74, h = 116 + ITEMS.length*rh, y = place(h), big = !SIDE;
     shopRect = { x, y: y + 82, w, rh, n: ITEMS.length, name: panel.name };
-    card(x, y, w, h, 'ICE SHOP', panel.name + ' · ' + v.coins + ' coins · ' + (CFG.clickShop ? 'click an item to buy' : 'type the number to buy'));
+    card(x, y, w, h, 'ISLAND SHOP', panel.name + ' · ' + v.coins + ' coins · ' + (CFG.clickShop ? 'click an item to buy' : 'type the number to buy'));
     ITEMS.forEach((it, i) => { const yy = y + 82 + i*rh + rh/2, ok = v.coins >= it.price;
       o.globalAlpha = out * (ok ? 1 : 0.55);
       o.fillStyle = ok ? '#fde9c4' : '#efe4d4'; o.beginPath(); o.roundRect(x + 22, yy - rh/2 + 4, w - 44, rh - 8, 16); o.fill();

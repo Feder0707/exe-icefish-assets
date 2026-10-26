@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EXE Ice Fishing · play in your browser</title>
+<title>EXE Fish Island · play in your browser</title>
 <style>
 @font-face{font-family:Fredoka;font-weight:600;src:url(assets/fonts/fredoka-latin-600-normal.woff2)}
 @font-face{font-family:Fredoka;font-weight:700;src:url(assets/fonts/fredoka-latin-700-normal.woff2)}
@@ -26,12 +26,38 @@ label{font-weight:600;color:#e9dcc6;font-size:15px}
 .demo .card{border-style:dashed;border-color:rgba(185,138,255,.45)}
 .demo h2{font-size:15px;margin:0 6px 0 0;color:#cdb6ff;font-weight:700}
 footer{text-align:center;opacity:.55;font-size:13px;padding:0 16px 22px}
+
+#intro{position:absolute;inset:0 16px;display:flex;align-items:center;justify-content:center;background:rgba(10,12,30,.55);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:5;transition:opacity .35s}
+#intro.out{opacity:0;pointer-events:none}
+.ic{position:relative;background:var(--cream);border:5px solid var(--red);box-shadow:0 0 0 3px var(--gold),0 18px 50px rgba(0,0,0,.5);border-radius:30px;padding:46px 40px 26px;width:min(560px,92%);text-align:center;color:var(--ink)}
+.ic .tag{position:absolute;top:-26px;left:50%;transform:translateX(-50%);background:var(--red);color:var(--cream);border:3px solid var(--gold);border-radius:18px;padding:6px 26px;font-size:28px;font-weight:700;white-space:nowrap;letter-spacing:.5px}
+.ic .sub{font-size:17px;font-weight:600;color:#9a4a3a;margin:2px 0 14px}
+.trio{display:flex;justify-content:center;align-items:flex-end;gap:14px;margin:0 0 6px}
+.trio div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.trio canvas{width:92px;height:auto}
+.trio b{font-size:13px;padding:2px 10px;border-radius:10px;color:#fff8ea}
+.steps{list-style:none;padding:0;margin:14px auto 18px;display:grid;gap:8px;text-align:left;max-width:420px}
+.steps li{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:600;background:#f6ead2;border-radius:14px;padding:8px 12px}
+.steps li i{font-style:normal;flex:0 0 30px;height:30px;border-radius:50%;background:var(--red);color:var(--cream);display:flex;align-items:center;justify-content:center;font-weight:700}
+.ic .row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+.ic button.big{font-size:24px}
+.ic .hint{font-size:13px;font-weight:600;opacity:.6;margin-top:12px}
+.ic .peng{position:absolute;right:-30px;bottom:-14px;width:84px;transform:rotate(6deg)}
+@media (max-width:700px){#intro{position:fixed;inset:0;overflow:auto;align-items:flex-start;padding:40px 0 20px}.ic{padding:40px 18px 20px}.ic .tag{font-size:21px}.trio canvas{width:64px}.ic .peng{display:none}}
 @media (max-width:700px){h1{font-size:20px}button.big{font-size:20px;padding:10px 22px}input{width:130px}}
 </style></head><body>
-<header><h1>EXE Ice Fishing<small>play in your browser · progress is saved on this device</small></h1></header>
-<div class="stage"><canvas id="c" width="1600" height="1024" aria-label="EXE Ice Fishing game"></canvas></div>
+<header><h1>EXE Fish Island<small>play in your browser · progress is saved on this device</small></h1></header>
+<div class="stage"><canvas id="c" width="1600" height="1024" aria-label="EXE Fish Island game"></canvas>
+<div id="intro"><div class="ic"><div class="tag">EXE FISH ISLAND</div>
+  <div class="sub">a cozy fishing game from a Twitch stream</div>
+  <div class="trio"><div><canvas data-a="cr" data-k="giftfin"></canvas><b style="background:#6a8fb0">normal</b></div><div><canvas data-a="cr_shiny" data-k="aurora"></canvas><b style="background:#b98aff">shiny</b></div><div><canvas data-a="cr_gold" data-k="bubbun"></canvas><b style="background:#e0a92a">golden</b></div></div>
+  <ul class="steps"><li><i>1</i><span>Press <b>Fish!</b> and wait for the bite</span></li><li><i>2</i><span>Catch all 79 creatures, in shiny and golden too</span></li><li><i>3</i><span>Spend your coins in the Shop and finish quests</span></li></ul>
+  <div class="row"><input id="inm" maxlength="20" autocomplete="off" aria-label="Your name"><button class="big" id="go">Start fishing</button></div>
+  <div class="hint">press Enter to start · progress is saved on this device</div>
+  <canvas class="peng" data-a="peng" data-k="p1_red"></canvas>
+</div></div></div>
 <div class="bar"><div class="card">
-  <label for="nm">Your name</label><input id="nm" maxlength="20" autocomplete="off">
+  <label for="nm">Your name</label><input id="nm" maxlength="20" autocomplete="off" placeholder="your name">
   <button class="big" id="fish">Fish!</button><span id="cd" style="min-width:58px;font-weight:600;color:#bff0e0"></span>
   <button class="tab" style="--tc:#9a6ff0" data-p="dex">Fishdex</button>
   <button class="tab" style="--tc:#c8901c" data-p="shop">Shop</button>
@@ -46,7 +72,7 @@ footer{text-align:center;opacity:.55;font-size:13px;padding:0 16px 22px}
   <button id="raid">Raid</button>
   <button id="reset">Reset my progress</button>
 </div></div>
-<footer>EXE Ice Fishing · a StreamElements widget for Twitch by form&amp;soul.exe — on stream, viewers play by typing !fish in chat</footer>
+<footer>EXE Fish Island · a StreamElements widget for Twitch by form&amp;soul.exe — on stream, viewers play by typing !fish in chat</footer>
 <script>
 (function(){
   const get = k => { try { return localStorage.getItem(k); } catch(e) { return null; } };
@@ -63,7 +89,7 @@ footer{text-align:center;opacity:.55;font-size:13px;padding:0 16px 22px}
 (function(){
   const B = window.BROWSER, $ = id => document.getElementById(id), cv = $('c');
   const BOTS = ['kiwi','luna_bytes','tobi','pip_pop','mochi_cat','snowpea'];
-  let me = B.get('exe-icefish-name') || ('angler' + Math.floor(100 + Math.random()*900));
+  let me = B.get('exe-icefish-name') || 'fisher';
   $('nm').value = me; $('ss').value = B.season; $('snd').textContent = 'Sound: ' + (B.sound ? 'on' : 'off');
   $('nm').addEventListener('change', () => { const v = $('nm').value.trim().replace(/\s+/g,'_').slice(0,20); if (v) { me = v; B.set('exe-icefish-name', v); } $('nm').value = me; });
   const cmd = c => EXE.onChat(me, c, { roles: { broadcaster: true } });
@@ -78,6 +104,15 @@ footer{text-align:center;opacity:.55;font-size:13px;padding:0 16px 22px}
   window.addEventListener('keydown', e => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return; if (e.code === 'Space' || e.key === 'f') { e.preventDefault(); cmd('!fish'); } });
   // cooldown readout
   setInterval(() => { const d = window.EXE_DEBUG && EXE_DEBUG(); const v = EXE.S.viewers[me]; $('cd').textContent = v ? v.coins + ' ¢' : ''; }, 300);
+
+  // intro / pre-start
+  (function(){ const it = $('intro'); $('inm').value = B.get('exe-icefish-name') || ''; $('inm').placeholder = 'your name';
+    fetch('assets/atlas/atlas.json').then(r => r.json()).then(A => document.querySelectorAll('#intro canvas').forEach(c => { const f = A[c.dataset.a][c.dataset.k], im = new Image();
+      im.onload = () => { c.width = f[2]; c.height = f[3]; c.getContext('2d').drawImage(im, f[0], f[1], f[2], f[3], 0, 0, f[2], f[3]); }; im.src = 'assets/atlas/' + c.dataset.a + '.webp'; })).catch(() => {});
+    const start = () => { const v = $('inm').value.trim().replace(/\s+/g,'_').slice(0,20); if (v) { me = v; B.set('exe-icefish-name', v); $('nm').value = v; }
+      it.classList.add('out'); setTimeout(() => it.remove(), 400); window.removeEventListener('keydown', key, true); };
+    const key = e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); start(); } else if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); e.stopPropagation(); } };
+    window.addEventListener('keydown', key, true); $('go').onclick = start; })();
   // demo
   let crowd = null;
   $('crowd').onclick = () => { if (crowd) { clearInterval(crowd); crowd = null; $('crowd').textContent = 'Add chat viewers'; return; }
