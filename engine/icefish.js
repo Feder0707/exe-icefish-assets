@@ -1,4 +1,4 @@
-/* EXE ICE FISHING · engine v1.0.1 · form&soul.exe */
+/* EXE ICE FISHING · engine v1.0.2 · form&soul.exe */
 (function(){
 'use strict';
 const W = 1024, H = 1024, PX = 4, LOOP = 12;
@@ -283,7 +283,7 @@ function onEvent(e, force){ // StreamElements events: subscriber, cheer, tip, ra
   lastAct = T; const dur = e.type === 'raid' ? (CFG.raidSecs || 45) : (CFG.stormSecs || 60);
   if (e.type === 'raid') { storm = { until: T + dur, kind: 'raid', by: e.name, amount: e.amount||0 };
     fishers.forEach(f => { if (f && f.state === 'wait') f.waitDur = Math.min(f.waitDur, T - f.t0 + 0.3); }); }
-  else { storm = { until: Math.max(storm.until, T) + (e.type === 'cheer' ? Math.min(180, dur*(e.amount||100)/500) : dur), kind: 'aurora', by: e.name }; }
+  else { const add = e.type === 'cheer' ? Math.min(dur*3, dur*(e.amount||100)/500) : dur; storm = { until: Math.min(Math.max(storm.until, T) + add, T + dur*3), kind: 'aurora', by: e.name }; }   // stacks, capped at 3x the storm length
   if (SIDE) feedAdd({ kind:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting fast' : 'AURORA STORM! legendary x3' }); else toasts.push({ t:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting!' : 'AURORA STORM!' }); sfx(e.type === 'raid' ? 'raid' : 'storm');
 }
 window.EXE = { onChat, onEvent, viewer, buy, ITEMS, QUESTS, roll, S, CFG, setSeed, force: [], forceFor: {}, CREATURES: () => CREATURES };
@@ -701,7 +701,7 @@ function drawToasts(){
   toasts.forEach(t => { if (SIDE && t.fed) return; const a = T - t.t0, al = clamp(a/0.2,0,1) * clamp((3.2-a)/0.3,0,1); const i = t.t === 'event' ? -1 : spotOf(t.name);
     if (i < 0) { loose.push(t); return; }
     const sp = SPOTS[i], hx = sp.st[0] + (sp.flip ? -12 : 12), stack = toasts.filter(u => u !== t && spotOf(u.name) === i && u.t0 > t.t0).length;
-    pillToast(t, hx, sp.st[1] - 180 - a*14 - stack*48, al, 'center'); });
+    pillToast(t, hx, sp.st[1] - 212 - a*14 - stack*48, al, 'center'); });
   if (!SIDE) loose.slice(-3).forEach((t, k) => { const a = T - t.t0, al = clamp(a/0.2,0,1) * clamp((3.2-a)/0.3,0,1); pillToast(t, 24, 300 + k*56, al, 'left', true); });
   window.__loose = loose;
 }
@@ -715,12 +715,17 @@ function pillToast(t, x, y, al, align, withName){
 }
 function drawStorm(){
   if (T >= storm.until) return; const left = storm.until - T, a = clamp(left/1, 0, 1);
-  o.save(); o.globalAlpha = a; const txt = storm.kind === 'raid' ? 'RAID · FISH ARE BITING' : 'AURORA STORM · LEGENDARY x3';
-  o.font = '700 22px Fredoka'; const w = o.measureText(txt).width + 70, x = W - 24 - w, y = 26;
+  const txt = storm.kind === 'raid' ? 'RAID · FISH ARE BITING' : 'AURORA STORM · LEGENDARY x3';
+  const secs = Math.ceil(left), tm = Math.floor(secs/60) + ':' + String(secs%60).padStart(2, '0');
+  o.save(); o.globalAlpha = a; o.textBaseline = 'middle';
+  o.font = '700 22px Fredoka'; const tw = o.measureText(txt).width;
+  o.font = '700 18px Fredoka'; const cw = o.measureText('0:00').width + 22;   // fixed-width timer pill: never grows, never overlaps
+  const w = 22 + tw + 14 + cw + 8, x = W - 24 - w, y = 26;
   const g = o.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, '#5fffb0'); g.addColorStop(0.5, '#4fd8ff'); g.addColorStop(1, '#b07dff');
   o.fillStyle = 'rgba(14,20,44,0.9)'; o.beginPath(); o.roundRect(x, y, w, 46, 23); o.fill(); o.lineWidth = 4; o.strokeStyle = g; o.stroke();
-  o.fillStyle = '#fff8ea'; o.textAlign = 'left'; o.textBaseline = 'middle'; o.fillText(txt, x + 22, y + 24);
-  o.fillStyle = '#b8f0ff'; o.textAlign = 'right'; o.font = '600 18px Fredoka'; o.fillText(Math.ceil(left) + 's', x + w - 18, y + 24); o.restore();
+  o.fillStyle = '#fff8ea'; o.textAlign = 'left'; o.font = '700 22px Fredoka'; o.fillText(txt, x + 22, y + 24);
+  const px = x + w - 8 - cw; o.fillStyle = 'rgba(79,216,255,0.18)'; o.beginPath(); o.roundRect(px, y + 8, cw, 30, 15); o.fill();
+  o.fillStyle = '#b8f0ff'; o.textAlign = 'center'; o.font = '700 18px Fredoka'; o.fillText(tm, px + cw/2, y + 24); o.restore();
 }
 
 const BIOME = {
@@ -815,7 +820,7 @@ function render(){
   if (window.EXE_OVERLAY) window.EXE_OVERLAY(o, T);
 }
 
-window.EXE_DEBUG = () => ({ T, storm: { active: T < storm.until, kind: storm.kind }, fishers: fishers.map(f => f && f.name), ghosts: ghosts.map(g => g.name), queue: queue.slice() });
+window.EXE_DEBUG = () => ({ T, storm: { active: T < storm.until, kind: storm.kind, left: Math.round(storm.until - T) }, fishers: fishers.map(f => f && f.name), ghosts: ghosts.map(g => g.name), queue: queue.slice() });
 window.advance = (dt) => { step(dt); render(); };
 window.renderAt = () => render();
 if (!/capture=1/.test(location.search)) READY.then(() => { let last = performance.now(); (function L(now){ const dt = Math.min(0.1, (now - last)/1000); last = now; step(dt); render(); requestAnimationFrame(L); })(last); });
