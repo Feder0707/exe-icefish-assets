@@ -1,4 +1,4 @@
-/* EXE FISH ISLAND · engine v1.0.6 · form&soul.exe */
+/* EXE FISH ISLAND · engine v1.0.7 · form&soul.exe */
 (function(){
 'use strict';
 const W = 1024, H = 1024, PX = 4, LOOP = 12;
@@ -661,7 +661,7 @@ function drawPanel(){
   }
   if (panel.kind === 'dex') {
     const ids = CREATURES.map(c => c.id); const got = new Set(Object.keys(v.dex).map(x => x.replace(/_(shiny|golden)$/,'')));
-    const cols = SIDE ? 8 : 12, cell = (w - 52)/cols, rows = Math.ceil(ids.length/cols), jh = JUNK.length ? 30 + cell*0.75 : 0, h = 124 + rows*cell + jh, y = place(h);
+    const cols = SIDE ? 8 : 12, cell = (w - 52)/cols, rows = Math.ceil(ids.length/cols), jh = JUNK.length ? 36 + Math.min(cell*0.75, (w - 60)/JUNK.length - 4) : 0, h = 124 + rows*cell + jh, y = place(h);
     card(x, y, w, h, panel.name.toUpperCase() + "'S FISHDEX", got.size + ' / ' + ids.length + ' found · ' + Object.keys(v.dex).filter(k=>/_shiny$/.test(k)).length + ' shiny · ' + Object.keys(v.dex).filter(k=>/_golden$/.test(k)).length + ' golden');
     // progress bar
     o.fillStyle = '#e6dccb'; o.beginPath(); o.roundRect(x + 40, y + 66, w - 80, 12, 6); o.fill();
@@ -671,8 +671,11 @@ function drawPanel(){
       o.fillStyle = got.has(id) ? '#fde9c4' : '#e6dccb'; o.beginPath(); o.roundRect(cx - cell/2 + 3, cy - cell/2 + 3, cell - 6, cell - 6, 12); o.fill();
       drawIcon(got.has(id) ? I['cr_'+id] : silhouette(id), cx, cy, cell - 14);
       if (v.dex[id+'_golden']) star(cx + cell/2 - 9, cy - cell/2 + 9, 8, '#e0a92a'); else if (v.dex[id+'_shiny']) star(cx + cell/2 - 9, cy - cell/2 + 9, 8, '#b98aff'); });
-    if (JUNK.length) { const jy0 = y + 112 + rows*cell, jc = Math.min(cell*0.75, (w - 30 - 160)/JUNK.length - 4);   // the drawer always fits inside the card o.fillStyle = '#7a5a3a'; o.font = '700 18px Fredoka'; o.textAlign = 'left'; o.textBaseline = 'middle'; o.fillText('JUNK DRAWER', x + 30, jy0);
-      JUNK.forEach((j, i) => { const cx = x + 30 + 130 + i*(jc + 4) + jc/2, cy = jy0; const has = v.dex[j.id];
+    if (JUNK.length) {   // junk drawer: a title line with a gag, then one row that always fits inside the card
+      const jt = y + 112 + rows*cell, jc = Math.min(cell*0.75, (w - 60)/JUNK.length - 4), jy0 = jt + 22 + jc/2, nj = JUNK.filter(j => v.dex[j.id]).length;
+      o.textBaseline = 'middle'; o.textAlign = 'left'; o.fillStyle = '#7a5a3a'; o.font = '700 18px Fredoka'; o.fillText('JUNK DRAWER ' + nj + '/' + JUNK.length, x + 30, jt);
+      o.textAlign = 'right'; o.fillStyle = '#a08466'; o.font = '600 15px Fredoka'; o.fillText(nj ? "one fisher's trash is another's treasure" : 'nothing here yet... keep fishing!', x + w - 30, jt);
+      JUNK.forEach((j, i) => { const cx = x + 30 + i*(jc + 4) + jc/2, cy = jy0; const has = v.dex[j.id];
         o.fillStyle = has ? '#efe0c8' : '#e6dccb'; o.beginPath(); o.roundRect(cx - jc/2 + 2, cy - jc/2 + 2, jc - 4, jc - 4, 10); o.fill(); drawIcon(has ? I['cr_'+j.id] : silhouette(j.id), cx, cy, jc - 10); }); }
   }
   if (panel.kind === 'quests') {
