@@ -54,7 +54,7 @@ footer{text-align:center;opacity:.55;font-size:13px;padding:0 16px 22px}
   const season = (location.search.match(/season=(\w+)/)||[])[1] || get('exe-icefish-season') || 'christmas';
   const sound = get('exe-icefish-sound') !== 'off';
   window.EXE_CFG = { assetBase:'assets/', season, storeKey:'exe-icefish-browser', sound, volume:0.7, cooldown:6, idleLeave:600, panelCooldown:0, panelDur:14,
-    clickShop:true, hint:'press Fish! to catch a creature', hintDelay:2, escapeChance:0.05 };
+    clickShop:true, instantMenus:true, hint:'press Fish! to catch a creature', hintDelay:2, escapeChance:0.05 };
   window.BROWSER = { season, sound, get, set };
 })();
 </script>

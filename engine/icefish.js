@@ -1,4 +1,4 @@
-/* EXE ICE FISHING · engine v1.0.3 · form&soul.exe */
+/* EXE ICE FISHING · engine v1.0.4 · form&soul.exe */
 (function(){
 'use strict';
 const W = 1024, H = 1024, PX = 4, LOOP = 12;
@@ -277,6 +277,10 @@ function buy(name, what){
 }
 const panelSeen = {};
 function openPanel(kind, name){ const k = kind + ':' + name;
+  if (CFG.instantMenus) {   // browser mode: a click swaps the menu right away; same button again closes it
+    panels.length = 0;
+    if (panel && panel.kind === kind && panel.name === name && T - panel.t0 < panel.dur - 0.3) { closePanel(); return; }
+    panel = { kind, name, t0: T, dur: CFG.panelDur || 14 }; sfx('menu'); if (kind === 'shop') shopOpenFor[name] = T; return; }
   if (panelSeen[k] !== undefined && T - panelSeen[k] < CFG.panelCooldown) return;
   if (panels.length >= 3 || panels.some(p => p.kind === kind && p.name === name) || (panel && panel.kind === kind && panel.name === name)) return;
   panelSeen[k] = T; panels.push({ kind, name }); }
