@@ -1,4 +1,4 @@
-/* EXE ICE FISHING · engine v1.0.2 · form&soul.exe */
+/* EXE ICE FISHING · engine v1.0.3 · form&soul.exe */
 (function(){
 'use strict';
 const W = 1024, H = 1024, PX = 4, LOOP = 12;
@@ -219,7 +219,7 @@ function allowed(meta){
   const r = (meta && meta.roles) || {}; if (r.broadcaster || r.mod) return true;
   if (CFG.who === 'mods') return false; if (CFG.who === 'vips') return !!r.vip;
   if (CFG.who === 'subs') return !!(r.sub || r.vip); return true; }
-let learnReward = false, learnStorm = false;
+let learnReward = false, learnStorm = false, shopRect = null;
 const shopOpenFor = {};
 function onChat(name, msg, meta){
   if (!msg && !(meta && meta.rewardId)) return; meta = meta || {};
@@ -290,7 +290,12 @@ function onEvent(e, force){ // StreamElements events: subscriber, cheer, tip, ra
   else { const add = e.type === 'cheer' ? Math.min(dur*3, dur*(e.amount||100)/500) : dur; storm = { until: Math.min(Math.max(storm.until, T) + add, T + dur*3), kind: 'aurora', by: e.name }; }   // stacks, capped at 3x the storm length
   if (SIDE) feedAdd({ kind:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting fast' : (e.type === 'points' ? 'AURORA STORM! (channel points)' : 'AURORA STORM! legendary x3') }); else toasts.push({ t:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting!' : 'AURORA STORM!' }); sfx(e.type === 'raid' ? 'raid' : 'storm');
 }
-window.EXE = { onChat, onEvent, viewer, buy, ITEMS, QUESTS, roll, S, CFG, setSeed, force: [], forceFor: {}, CREATURES: () => CREATURES };
+function clickAt(px, py){   // browser mode: click a shop row to buy (canvas pixel coords)
+  const r = shopRect; if (!r || !panel || panel.kind !== 'shop') return false;
+  if (px < r.x || px > r.x + r.w || py < r.y || py > r.y + r.n*r.rh) return false;
+  const i = Math.floor((py - r.y)/r.rh); buy(r.name, String(i + 1)); panel.t0 = Math.min(panel.t0, T); panel.dur = Math.max(panel.dur, T - panel.t0 + 6); return true; }
+function closePanel(){ if (panel) panel.dur = Math.min(panel.dur, T - panel.t0 + 0.3); }
+window.EXE = { clickAt, closePanel, onChat, onEvent, viewer, buy, ITEMS, QUESTS, roll, S, CFG, setSeed, force: [], forceFor: {}, CREATURES: () => CREATURES };
 
 function drawEscapes(){ fx.forEach(e => { const a = T - e.t0;
   if (e.k === 'escape' && a < 2.6) { const sp = SPOTS[e.i], [hx, hy] = sp.hole, C = crImg(e.res);
@@ -387,7 +392,8 @@ function step(dt){
   // a spot is free: the oldest waiting viewer walks in, keeping whatever they were doing
   for (let i = 0; i < fishers.length; i++) if (!fishers[i] && queue.length) { const n = queue.shift(); const g = ghosts.find(x => x.name === n);
     if (g) { ghosts.splice(ghosts.indexOf(g), 1); g.since = T; fishers[i] = g; fx.push({ k: 'puff', x: SPOTS[i].st[0], y: SPOTS[i].st[1]-50, t0: T }); } }
-  if (!panel && panels.length) { panel = panels.shift(); panel.t0 = T; sfx('menu'); panel.dur = panels.length ? 5 : 7; }
+  if (!panel && panels.length) { panel = panels.shift(); panel.t0 = T; sfx('menu'); panel.dur = CFG.panelDur || (panels.length ? 5 : 7); }
+  if (!panel || panel.kind !== 'shop') shopRect = null;
   if (panel && T - panel.t0 > panel.dur) panel = null;
   toasts.forEach(t => { if (t.t0 === undefined) t.t0 = T; }); for (let k = toasts.length - 1; k >= 0; k--) if (T - toasts[k].t0 > 3.2) toasts.splice(k, 1);
   if (!popup && popups.length && !escapeOn()) { popup = popups.shift(); popup.t0 = T; if (popup.res.isNew && !popup.escape) later(0.7, () => sfx('new')); popup.dur = popup.escape ? 2.2 : (['legendary','mythic'].includes(popup.res.cr.rarity) || popup.res.variant !== 'normal') ? 3.4 : (popups.length ? 2.0 : 2.8); }
@@ -636,7 +642,8 @@ function drawPanel(){
   o.textBaseline = 'middle';
   if (panel.kind === 'shop') {
     const rh = SIDE ? 70 : 74, h = 116 + ITEMS.length*rh, y = place(h), big = !SIDE;
-    card(x, y, w, h, 'ICE SHOP', panel.name + ' · ' + v.coins + ' coins · type the number to buy');
+    shopRect = { x, y: y + 82, w, rh, n: ITEMS.length, name: panel.name };
+    card(x, y, w, h, 'ICE SHOP', panel.name + ' · ' + v.coins + ' coins · ' + (CFG.clickShop ? 'click an item to buy' : 'type the number to buy'));
     ITEMS.forEach((it, i) => { const yy = y + 82 + i*rh + rh/2, ok = v.coins >= it.price;
       o.globalAlpha = out * (ok ? 1 : 0.55);
       o.fillStyle = ok ? '#fde9c4' : '#efe4d4'; o.beginPath(); o.roundRect(x + 22, yy - rh/2 + 4, w - 44, rh - 8, 16); o.fill();
