@@ -1,4 +1,4 @@
-/* EXE FISH ISLAND · engine v1.0.5 · form&soul.exe */
+/* EXE FISH ISLAND · engine v1.0.6 · form&soul.exe */
 (function(){
 'use strict';
 const W = 1024, H = 1024, PX = 4, LOOP = 12;
@@ -671,7 +671,7 @@ function drawPanel(){
       o.fillStyle = got.has(id) ? '#fde9c4' : '#e6dccb'; o.beginPath(); o.roundRect(cx - cell/2 + 3, cy - cell/2 + 3, cell - 6, cell - 6, 12); o.fill();
       drawIcon(got.has(id) ? I['cr_'+id] : silhouette(id), cx, cy, cell - 14);
       if (v.dex[id+'_golden']) star(cx + cell/2 - 9, cy - cell/2 + 9, 8, '#e0a92a'); else if (v.dex[id+'_shiny']) star(cx + cell/2 - 9, cy - cell/2 + 9, 8, '#b98aff'); });
-    if (JUNK.length) { const jy0 = y + 112 + rows*cell, jc = cell*0.75; o.fillStyle = '#7a5a3a'; o.font = '700 18px Fredoka'; o.textAlign = 'left'; o.textBaseline = 'middle'; o.fillText('JUNK DRAWER', x + 30, jy0);
+    if (JUNK.length) { const jy0 = y + 112 + rows*cell, jc = Math.min(cell*0.75, (w - 30 - 160)/JUNK.length - 4);   // the drawer always fits inside the card o.fillStyle = '#7a5a3a'; o.font = '700 18px Fredoka'; o.textAlign = 'left'; o.textBaseline = 'middle'; o.fillText('JUNK DRAWER', x + 30, jy0);
       JUNK.forEach((j, i) => { const cx = x + 30 + 130 + i*(jc + 4) + jc/2, cy = jy0; const has = v.dex[j.id];
         o.fillStyle = has ? '#efe0c8' : '#e6dccb'; o.beginPath(); o.roundRect(cx - jc/2 + 2, cy - jc/2 + 2, jc - 4, jc - 4, 10); o.fill(); drawIcon(has ? I['cr_'+j.id] : silhouette(j.id), cx, cy, jc - 10); }); }
   }
