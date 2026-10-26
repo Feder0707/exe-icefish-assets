@@ -11,7 +11,7 @@ small{display:block;text-align:center;opacity:.6;padding-bottom:12px}
 </style></head><body>
 <canvas id="c" width="1600" height="1024"></canvas>
 <div class="bar">
-<button onclick="EXE.onChat(name(),'!fish')">someone fishes</button>
+<button onclick="EXE.onChat(randName(),'!fish')">someone fishes</button>
 <button onclick="EXE.onChat('kiwi','!shop')">!shop</button>
 <button onclick="EXE.onChat('kiwi','!dex')">!dex</button>
 <button onclick="EXE.onChat('kiwi','!quests')">!quests</button>
@@ -19,7 +19,7 @@ small{display:block;text-align:center;opacity:.6;padding-bottom:12px}
 <button onclick="EXE.onEvent({type:'raid',name:'cozyqueen',amount:10},true)">raid</button>
 </div><small>EXE Ice Fishing · engine preview · form&amp;soul.exe</small>
 <script>
-const names=['kiwi','luna_bytes','tobi','pip_pop','mochi_cat','snowpea'];let ni=0;function name(){return names[(ni++)%names.length]}
+const names=['kiwi','luna_bytes','tobi','pip_pop','mochi_cat','snowpea'];let ni=0;function randName(){return names[(ni++)%names.length]}
 window.EXE_CFG={assetBase:'assets/',season:(location.search.match(/season=(\w+)/)||[])[1]||'christmas',storeKey:'exe-icefish-preview'};
 </script>
 <script src="engine/icefish.js"></script>

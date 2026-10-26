@@ -219,19 +219,22 @@ function allowed(meta){
   const r = (meta && meta.roles) || {}; if (r.broadcaster || r.mod) return true;
   if (CFG.who === 'mods') return false; if (CFG.who === 'vips') return !!r.vip;
   if (CFG.who === 'subs') return !!(r.sub || r.vip); return true; }
-let learnReward = false;
+let learnReward = false, learnStorm = false;
 const shopOpenFor = {};
 function onChat(name, msg, meta){
   if (!msg && !(meta && meta.rewardId)) return; meta = meta || {};
   let m = (msg || '').trim().toLowerCase().replace(/\s+/g, ' '); const C = CMD(), r = meta.roles || {};
   // forgiving syntax: "!buy1" = "!buy 1", "!icefishstorm" / "!icefish-storm" = "!icefish storm"
   { const bm = m.match(new RegExp('^' + C.buy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s#-]*(\\d{1,2})$')); if (bm) m = C.buy + ' ' + bm[1]; }
-  { const im = m.match(/^!icefish[\s_-]*(storm|raid|give|setreward|reset)(.*)$/); if (im) m = '!icefish ' + im[1] + (im[2] ? ' ' + im[2].trim() : ''); }
+  { const im = m.match(/^!icefish[\s_-]*(storm|raid|give|setstormreward|setreward|reset)(.*)$/); if (im) m = '!icefish ' + im[1] + (im[2] ? ' ' + im[2].trim() : ''); }
   const parts = m.split(' '), cmd = parts[0];
   // streamer / mod tools
   if (cmd === '!icefish' && (r.broadcaster || r.mod)) return modCmd(name, parts.slice(1));
   // channel points: reward redemption (needs "Require viewer to enter text" on the reward)
   if (meta.rewardId) {
+    if (learnStorm) { learnStorm = false; CFG.stormRewardId = meta.rewardId; S.stormRewardId = meta.rewardId; save(); toasts.push({ t:'event', name, text: 'aurora reward linked!' }); return; }
+    const srid = CFG.stormRewardId || S.stormRewardId;
+    if (srid && meta.rewardId === srid) { if (CFG.stormPoints !== false) onEvent({ type: 'points', name }, true); return; }
     if (learnReward) { learnReward = false; CFG.rewardId = meta.rewardId; S.rewardId = meta.rewardId; save(); toasts.push({ t:'event', name, text: 'channel-point reward linked!' }); return; }
     const rid = CFG.rewardId || S.rewardId;
     if (rid && meta.rewardId === rid && CFG.fishMode !== 'command') { lastAct = T; return cast(name, true); }
@@ -252,6 +255,7 @@ function onChat(name, msg, meta){
 }
 function modCmd(name, a){
   const k = a[0];
+  if (k === 'setstormreward') { learnStorm = true; learnReward = false; toasts.push({ t:'event', name, text: 'redeem your aurora reward once to link it' }); return; }
   if (k === 'setreward') { learnReward = true; toasts.push({ t:'event', name, text: 'redeem your fishing reward once to link it' }); return; }
   if (k === 'storm') return onEvent({ type: 'subscriber', name }, true);
   if (k === 'raid') return onEvent({ type: 'raid', name, amount: 10 }, true);
@@ -284,7 +288,7 @@ function onEvent(e, force){ // StreamElements events: subscriber, cheer, tip, ra
   if (e.type === 'raid') { storm = { until: T + dur, kind: 'raid', by: e.name, amount: e.amount||0 };
     fishers.forEach(f => { if (f && f.state === 'wait') f.waitDur = Math.min(f.waitDur, T - f.t0 + 0.3); }); }
   else { const add = e.type === 'cheer' ? Math.min(dur*3, dur*(e.amount||100)/500) : dur; storm = { until: Math.min(Math.max(storm.until, T) + add, T + dur*3), kind: 'aurora', by: e.name }; }   // stacks, capped at 3x the storm length
-  if (SIDE) feedAdd({ kind:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting fast' : 'AURORA STORM! legendary x3' }); else toasts.push({ t:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting!' : 'AURORA STORM!' }); sfx(e.type === 'raid' ? 'raid' : 'storm');
+  if (SIDE) feedAdd({ kind:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting fast' : (e.type === 'points' ? 'AURORA STORM! (channel points)' : 'AURORA STORM! legendary x3') }); else toasts.push({ t:'event', name: e.name, text: e.type === 'raid' ? 'RAID! fish are biting!' : 'AURORA STORM!' }); sfx(e.type === 'raid' ? 'raid' : 'storm');
 }
 window.EXE = { onChat, onEvent, viewer, buy, ITEMS, QUESTS, roll, S, CFG, setSeed, force: [], forceFor: {}, CREATURES: () => CREATURES };
 
